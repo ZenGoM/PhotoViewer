@@ -12,6 +12,7 @@ public partial class MainForm : Form
     private ThumbnailPanel? _selectedPanel;
     private CancellationTokenSource? _loadCts;
     private readonly AppSettings _settings;
+    private ContextMenuStrip? _sharedContextMenu;
 
     public MainForm()
     {
@@ -34,7 +35,7 @@ public partial class MainForm : Form
             Location = new Point(_settings.WindowLeft, _settings.WindowTop);
         }
 
-        ClientSize = new Size(_settings.WindowWidth, _settings.WindowHeight);
+        Size = new Size(_settings.WindowWidth, _settings.WindowHeight);
         splitContainer.SplitterDistance = Math.Max(100, _settings.SplitterDistance);
 
         if (state == FormWindowState.Maximized)
@@ -156,6 +157,7 @@ public partial class MainForm : Form
     private async Task LoadThumbnailsAsync(string folderPath)
     {
         _loadCts?.Cancel();
+        _loadCts?.Dispose();
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
 
@@ -165,11 +167,13 @@ public partial class MainForm : Form
         string[] files;
         try
         {
-            files = Directory.GetFiles(folderPath)
-                .Where(f => ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
-                .OrderBy(f => f)
-                .ToArray();
+            files = await Task.Run(() =>
+                Directory.GetFiles(folderPath)
+                    .Where(f => ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
+                    .OrderBy(f => f)
+                    .ToArray(), token);
         }
+        catch (OperationCanceledException) { throw; }
         catch (UnauthorizedAccessException)
         {
             statusLabel.Text = "アクセスが拒否されました";
@@ -188,57 +192,93 @@ public partial class MainForm : Form
         }
 
         statusLabel.Text = $"{files.Length} 件の画像";
-        thumbnailPanel.SuspendLayout();
 
-        foreach (var file in files)
+        _sharedContextMenu = BuildSharedContextMenu();
+
+        // パネルをバッチ作成しながら yield して UI を解放する
+        const int BatchSize = 50;
+        for (int i = 0; i < files.Length; i += BatchSize)
         {
-            if (token.IsCancellationRequested) break;
-            var panel = CreateThumbnailPanel(file);
-            _thumbnailPanels.Add(panel);
-            thumbnailPanel.Controls.Add(panel);
-        }
-
-        thumbnailPanel.ResumeLayout();
-
-        await Task.Run(() =>
-        {
-            foreach (var panel in _thumbnailPanels.ToList())
+            if (token.IsCancellationRequested) return;
+            int end = Math.Min(i + BatchSize, files.Length);
+            var batch = new ThumbnailPanel[end - i];
+            for (int j = i; j < end; j++)
             {
-                if (token.IsCancellationRequested) break;
-                if (panel.Tag is not string filePath) continue;
+                batch[j - i] = CreateThumbnailPanel(files[j], _sharedContextMenu);
+                _thumbnailPanels.Add(batch[j - i]);
+            }
+            thumbnailPanel.SuspendLayout();
+            thumbnailPanel.Controls.AddRange(batch);
+            thumbnailPanel.ResumeLayout(false);
+            await Task.Yield();
+        }
+        thumbnailPanel.PerformLayout();
+
+        if (token.IsCancellationRequested) return;
+
+        // サムネイルを並列読み込み
+        int completed = 0;
+        var snapshot = _thumbnailPanels.ToList();
+        int parallelism = Math.Clamp(Environment.ProcessorCount, 2, 8);
+
+        await Parallel.ForEachAsync(
+            snapshot,
+            new ParallelOptions { MaxDegreeOfParallelism = parallelism, CancellationToken = token },
+            async (panel, ct) =>
+            {
+                if (panel.IsDisposed || panel.Tag is not string filePath) return;
+
+                Image? thumb = null;
+                try { thumb = await Task.Run(() => LoadThumbnail(filePath), ct); }
+                catch { return; }
+
+                if (ct.IsCancellationRequested || panel.IsDisposed)
+                {
+                    thumb?.Dispose();
+                    return;
+                }
                 try
                 {
-                    using var img = Image.FromFile(filePath);
-                    var thumb = CreateThumbnail(img);
-                    if (!token.IsCancellationRequested)
+                    panel.BeginInvoke(() =>
                     {
-                        panel.BeginInvoke(() =>
-                        {
-                            if (!token.IsCancellationRequested)
-                                panel.SetThumbnail(thumb);
-                            else
-                                thumb.Dispose();
-                        });
-                    }
-                    else
-                    {
-                        thumb.Dispose();
-                    }
+                        if (!ct.IsCancellationRequested && !panel.IsDisposed)
+                            panel.SetThumbnail(thumb);
+                        else
+                            thumb?.Dispose();
+                    });
                 }
-                catch { }
-            }
-        }, token);
+                catch (ObjectDisposedException) { thumb?.Dispose(); }
+
+                int count = Interlocked.Increment(ref completed);
+                if (count % 20 == 0 || count == snapshot.Count)
+                    BeginInvoke(() =>
+                    {
+                        if (!ct.IsCancellationRequested)
+                            statusLabel.Text = $"{count} / {snapshot.Count} 件読み込み済み";
+                    });
+            });
+
+        if (!token.IsCancellationRequested)
+            statusLabel.Text = $"{files.Length} 件の画像";
     }
 
-    private ThumbnailPanel CreateThumbnailPanel(string filePath)
+    private static Image LoadThumbnail(string filePath)
     {
-        var panel = new ThumbnailPanel(filePath, ThumbnailSize, ThumbnailPadding);
-        panel.Click += ThumbnailPanel_Click;
-        panel.DoubleClick += ThumbnailPanel_DoubleClick;
+        using var img = Image.FromFile(filePath);
+        var (w, h) = FitSize(img.Width, img.Height, ThumbnailSize, ThumbnailSize);
+        // JPEG 埋め込みサムネイルがあれば GDI+ が自動で利用するため高速
+        return img.GetThumbnailImage(w, h, null, IntPtr.Zero);
+    }
 
+    private ContextMenuStrip BuildSharedContextMenu()
+    {
         var menu = new ContextMenuStrip();
         menu.Items.Add(new ToolStripMenuItem("似た写真を探す", null, (_, _) =>
         {
+            var src = menu.SourceControl;
+            var panel = src as ThumbnailPanel ?? src?.Parent as ThumbnailPanel;
+            if (panel?.Tag is not string filePath) return;
+
             using var folderDlg = new SearchFolderDialog(_settings.SearchFolders);
             if (folderDlg.ShowDialog(this) != DialogResult.OK) return;
             if (folderDlg.SelectedFolders.Count == 0)
@@ -249,11 +289,18 @@ public partial class MainForm : Form
             }
             _settings.SearchFolders = folderDlg.SelectedFolders.ToList();
             _settings.Save();
-            var form = new SimilarPhotosForm(filePath, folderDlg.SelectedFolders);
+            var form = new SimilarPhotosForm(filePath, folderDlg.SelectedFolders, _settings);
             form.Show(this);
         }));
-        panel.ApplyContextMenu(menu);
+        return menu;
+    }
 
+    private ThumbnailPanel CreateThumbnailPanel(string filePath, ContextMenuStrip menu)
+    {
+        var panel = new ThumbnailPanel(filePath, ThumbnailSize, ThumbnailPadding);
+        panel.Click += ThumbnailPanel_Click;
+        panel.DoubleClick += ThumbnailPanel_DoubleClick;
+        panel.ApplyContextMenu(menu);
         return panel;
     }
 
@@ -276,16 +323,6 @@ public partial class MainForm : Form
         }
     }
 
-    private static Image CreateThumbnail(Image source)
-    {
-        var (w, h) = FitSize(source.Width, source.Height, ThumbnailSize, ThumbnailSize);
-        var bmp = new Bitmap(w, h);
-        using var g = Graphics.FromImage(bmp);
-        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        g.DrawImage(source, 0, 0, w, h);
-        return bmp;
-    }
-
     private static (int w, int h) FitSize(int srcW, int srcH, int maxW, int maxH)
     {
         if (srcW <= maxW && srcH <= maxH) return (srcW, srcH);
@@ -296,25 +333,49 @@ public partial class MainForm : Form
     private void ClearThumbnails()
     {
         _selectedPanel = null;
+
         foreach (var p in _thumbnailPanels)
         {
             p.Click -= ThumbnailPanel_Click;
             p.DoubleClick -= ThumbnailPanel_DoubleClick;
-            var menu = p.ContextMenuStrip;
             p.ContextMenuStrip = null;
-            menu?.Dispose();
-            p.Dispose();
         }
         _thumbnailPanels.Clear();
-        thumbnailPanel.Controls.Clear();
+
+        _sharedContextMenu?.Dispose();
+        _sharedContextMenu = null;
+
+        // 旧コンテナを新しい空のコンテナに差し替える。
+        // Controls.Clear() は子パネル1枚ごとに SetParent(NULL) を呼ぶため
+        // 1254 枚では約 2.5 秒かかる。差し替えなら Win32 呼び出しは 1 回だけ。
+        var oldPanel = thumbnailPanel;
+        oldPanel.Visible = false; // 差し替え中にデスクトップに浮かないよう非表示
+        thumbnailPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = Color.WhiteSmoke,
+            Padding = new Padding(4)
+        };
+        splitContainer.Panel2.SuspendLayout();
+        splitContainer.Panel2.Controls.Remove(oldPanel);
+        splitContainer.Panel2.Controls.Add(thumbnailPanel);
+        splitContainer.Panel2.ResumeLayout(false);
+
+        // 旧コンテナは次の UI メッセージループで破棄（非同期・UI スレッド上）
+        // DestroyWindow が子 HWND を一括破棄するため個別 SetParent より大幅に高速
+        BeginInvoke(oldPanel.Dispose);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         _loadCts?.Cancel();
-        ClearThumbnails();
         SaveSettings();
-        base.OnFormClosing(e);
+        // 設定保存後は Environment.Exit で即終了する。
+        // base 経由の DestroyWindow → WM_DESTROY チェーンは
+        // 3000 個超の HWND を UI スレッドで同期破棄するため応答なしになる。
+        // OS がプロセス終了時にすべてのリソースを回収するため安全。
+        Environment.Exit(0);
     }
 
     private void SaveSettings()
@@ -346,14 +407,10 @@ internal class ThumbnailPanel : Panel
 
     private readonly PictureBox _pictureBox;
     private readonly Label _label;
-    private readonly int _size;
-    private readonly int _padding;
     private bool _selected;
 
     public ThumbnailPanel(string filePath, int size, int padding)
     {
-        _size = size;
-        _padding = padding;
         Tag = filePath;
 
         Width = size + padding * 2;

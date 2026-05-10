@@ -14,12 +14,14 @@ public class SimilarPhotosForm : Form
 
     private readonly string _sourcePath;
     private readonly IReadOnlyList<string> _searchFolders;
+    private readonly AppSettings _settings;
     private ulong _sourceHash;
     private CancellationTokenSource? _searchCts;
     private readonly ConcurrentQueue<SimilarResult> _pendingResults = new();
     private int _scanned;
     private int _found;
 
+    private SplitContainer _mainSplit = null!;
     private SplitContainer _topSplit = null!;
     private PictureBox _sourcePictureBox = null!;
     private PictureBox _selectedPictureBox = null!;
@@ -34,10 +36,11 @@ public class SimilarPhotosForm : Form
     private int _sortColumn = 2;
     private bool _sortAscending = false;
 
-    public SimilarPhotosForm(string sourcePath, IReadOnlyList<string> searchFolders)
+    public SimilarPhotosForm(string sourcePath, IReadOnlyList<string> searchFolders, AppSettings settings)
     {
         _sourcePath = sourcePath;
         _searchFolders = DeduplicateFolders(searchFolders);
+        _settings = settings;
         _flushTimer = new System.Windows.Forms.Timer { Interval = 250 };
         _flushTimer.Tick += FlushResults;
         InitializeComponents();
@@ -48,15 +51,14 @@ public class SimilarPhotosForm : Form
     private void InitializeComponents()
     {
         Text = $"似た写真を探す — {Path.GetFileName(_sourcePath)}";
-        Size = new Size(1000, 720);
+        Size = new Size(_settings.SimilarPhotosWidth, _settings.SimilarPhotosHeight);
         MinimumSize = new Size(700, 500);
         Font = new Font("Segoe UI", 9f);
 
         // ---- 上部比較エリア ----
         _topSplit = new SplitContainer
         {
-            Dock = DockStyle.Top,
-            Height = 262,
+            Dock = DockStyle.Fill,
             BackColor = Color.Black,
         };
 
@@ -119,20 +121,44 @@ public class SimilarPhotosForm : Form
         _listView.SelectedIndexChanged += ListView_SelectedIndexChanged;
         _listView.ColumnClick += ListView_ColumnClick;
 
-        Controls.Add(_listView);
-        Controls.Add(toolPanel);
-        Controls.Add(_topSplit);
+        // ---- メイン縦スプリッター（上部：比較画像 / 下部：結果リスト）----
+        _mainSplit = new SplitContainer
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Horizontal,
+        };
+        _mainSplit.Panel1.Controls.Add(_topSplit);
+        _mainSplit.Panel2.Controls.Add(_listView);
+        _mainSplit.Panel2.Controls.Add(toolPanel);
+
+        Controls.Add(_mainSplit);
     }
 
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-        // Width 確定後に MinSize と中央分割を設定
+
+        // メイン縦スプリッター（上部比較エリアの高さ）
+        _mainSplit.Panel1MinSize = 100;
+        _mainSplit.Panel2MinSize = 80;
+        int mainDist = _settings.SimilarPhotosMainSplit;
+        if (mainDist >= _mainSplit.Panel1MinSize &&
+            mainDist <= _mainSplit.Height - _mainSplit.Panel2MinSize - _mainSplit.SplitterWidth)
+            _mainSplit.SplitterDistance = mainDist;
+
+        // 基準画像の幅（_topSplit の左右分割）
         _topSplit.Panel1MinSize = 150;
         _topSplit.Panel2MinSize = 150;
-        int half = (_topSplit.Width - _topSplit.SplitterWidth) / 2;
-        if (half >= _topSplit.Panel1MinSize)
-            _topSplit.SplitterDistance = half;
+        int srcWidth = _settings.SimilarPhotosSourceWidth;
+        if (srcWidth >= _topSplit.Panel1MinSize &&
+            srcWidth <= _topSplit.Width - _topSplit.Panel2MinSize - _topSplit.SplitterWidth)
+            _topSplit.SplitterDistance = srcWidth;
+        else
+        {
+            int half = (_topSplit.Width - _topSplit.SplitterWidth) / 2;
+            if (half >= _topSplit.Panel1MinSize)
+                _topSplit.SplitterDistance = half;
+        }
     }
 
     private static Label MakeNameLabel(string text, Color? fg = null) => new()
@@ -327,6 +353,13 @@ public class SimilarPhotosForm : Form
         _searchCts?.Cancel();
         _sourcePictureBox.Image?.Dispose();
         _selectedPictureBox.Image?.Dispose();
+
+        _settings.SimilarPhotosWidth = Width;
+        _settings.SimilarPhotosHeight = Height;
+        _settings.SimilarPhotosMainSplit = _mainSplit.SplitterDistance;
+        _settings.SimilarPhotosSourceWidth = _topSplit.SplitterDistance;
+        _settings.Save();
+
         base.OnFormClosing(e);
     }
 }
