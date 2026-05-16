@@ -1,5 +1,3 @@
-using System.Drawing.Imaging;
-
 namespace PhotoViewer;
 
 public partial class MainForm : Form
@@ -12,7 +10,6 @@ public partial class MainForm : Form
     private ThumbnailPanel? _selectedPanel;
     private CancellationTokenSource? _loadCts;
     private readonly AppSettings _settings;
-    private ContextMenuStrip? _sharedContextMenu;
 
     public MainForm()
     {
@@ -193,8 +190,6 @@ public partial class MainForm : Form
 
         statusLabel.Text = $"{files.Length} 件の画像";
 
-        _sharedContextMenu = BuildSharedContextMenu();
-
         // パネルをバッチ作成しながら yield して UI を解放する
         const int BatchSize = 50;
         for (int i = 0; i < files.Length; i += BatchSize)
@@ -204,7 +199,7 @@ public partial class MainForm : Form
             var batch = new ThumbnailPanel[end - i];
             for (int j = i; j < end; j++)
             {
-                batch[j - i] = CreateThumbnailPanel(files[j], _sharedContextMenu);
+                batch[j - i] = CreateThumbnailPanel(files[j]);
                 _thumbnailPanels.Add(batch[j - i]);
             }
             thumbnailPanel.SuspendLayout();
@@ -270,37 +265,11 @@ public partial class MainForm : Form
         return img.GetThumbnailImage(w, h, null, IntPtr.Zero);
     }
 
-    private ContextMenuStrip BuildSharedContextMenu()
-    {
-        var menu = new ContextMenuStrip();
-        menu.Items.Add(new ToolStripMenuItem("似た写真を探す", null, (_, _) =>
-        {
-            var src = menu.SourceControl;
-            var panel = src as ThumbnailPanel ?? src?.Parent as ThumbnailPanel;
-            if (panel?.Tag is not string filePath) return;
-
-            using var folderDlg = new SearchFolderDialog(_settings.SearchFolders);
-            if (folderDlg.ShowDialog(this) != DialogResult.OK) return;
-            if (folderDlg.SelectedFolders.Count == 0)
-            {
-                MessageBox.Show("検索フォルダーが指定されていません。", "フォト ビューアー",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-            _settings.SearchFolders = folderDlg.SelectedFolders.ToList();
-            _settings.Save();
-            var form = new SimilarPhotosForm(filePath, folderDlg.SelectedFolders, _settings);
-            form.Show(this);
-        }));
-        return menu;
-    }
-
-    private ThumbnailPanel CreateThumbnailPanel(string filePath, ContextMenuStrip menu)
+    private ThumbnailPanel CreateThumbnailPanel(string filePath)
     {
         var panel = new ThumbnailPanel(filePath, ThumbnailSize, ThumbnailPadding);
         panel.Click += ThumbnailPanel_Click;
         panel.DoubleClick += ThumbnailPanel_DoubleClick;
-        panel.ApplyContextMenu(menu);
         return panel;
     }
 
@@ -338,12 +307,8 @@ public partial class MainForm : Form
         {
             p.Click -= ThumbnailPanel_Click;
             p.DoubleClick -= ThumbnailPanel_DoubleClick;
-            p.ContextMenuStrip = null;
         }
         _thumbnailPanels.Clear();
-
-        _sharedContextMenu?.Dispose();
-        _sharedContextMenu = null;
 
         // 旧コンテナを新しい空のコンテナに差し替える。
         // Controls.Clear() は子パネル1枚ごとに SetParent(NULL) を呼ぶため
@@ -454,13 +419,6 @@ internal class ThumbnailPanel : Panel
         MouseLeave += (s, e) => { if (!_selected) BackColor = NormalColor; };
         _pictureBox.MouseEnter += (s, e) => { if (!_selected) BackColor = HoverColor; };
         _pictureBox.MouseLeave += (s, e) => { if (!_selected) BackColor = NormalColor; };
-    }
-
-    public void ApplyContextMenu(ContextMenuStrip menu)
-    {
-        ContextMenuStrip = menu;
-        _pictureBox.ContextMenuStrip = menu;
-        _label.ContextMenuStrip = menu;
     }
 
     public void SetThumbnail(Image thumbnail)
