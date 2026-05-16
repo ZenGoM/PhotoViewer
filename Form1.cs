@@ -193,7 +193,7 @@ public partial class MainForm : Form
             return;
         }
 
-        folderInfoLabel.Text =
+        folderInfoStatusLabel.Text =
             $"フォルダー: {allFileCount:N0} ファイル / {FormatSize(allFileBytes)}" +
             $"　　画像: {files.Length:N0} ファイル / {FormatSize(imageFileBytes)}";
 
@@ -449,7 +449,7 @@ public partial class MainForm : Form
     private void ClearThumbnails()
     {
         _selectedPanel = null;
-        folderInfoLabel.Text = string.Empty;
+        folderInfoStatusLabel.Text = string.Empty;
 
         foreach (var p in _thumbnailPanels)
         {
