@@ -18,6 +18,7 @@ partial class MainForm
         splitContainer = new SplitContainer();
         treeView = new TreeView();
         thumbnailPanel = new FlowLayoutPanel();
+        folderInfoLabel = new Label();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
 
@@ -42,12 +43,27 @@ partial class MainForm
         treeView.AfterSelect += treeView_AfterSelect;
         splitContainer.Panel1.Controls.Add(treeView);
 
+        // folderInfoLabel
+        folderInfoLabel.Dock = DockStyle.Top;
+        folderInfoLabel.Height = 25;
+        folderInfoLabel.BackColor = Color.FromArgb(242, 242, 242);
+        folderInfoLabel.ForeColor = Color.FromArgb(60, 60, 60);
+        folderInfoLabel.Font = new Font("Segoe UI", 8.5f);
+        folderInfoLabel.TextAlign = ContentAlignment.MiddleLeft;
+        folderInfoLabel.Padding = new Padding(8, 0, 0, 0);
+        folderInfoLabel.Text = string.Empty;
+
         // thumbnailPanel
         thumbnailPanel.Dock = DockStyle.Fill;
         thumbnailPanel.AutoScroll = true;
         thumbnailPanel.BackColor = Color.WhiteSmoke;
         thumbnailPanel.Padding = new Padding(4);
+
+        // Panel2: thumbnailPanel を先に追加し、folderInfoLabel を後に追加することで
+        // WinForms のドッキング処理順（後追加が先にドック）により
+        // folderInfoLabel が最上部、thumbnailPanel が残りを埋める
         splitContainer.Panel2.Controls.Add(thumbnailPanel);
+        splitContainer.Panel2.Controls.Add(folderInfoLabel);
 
         // statusStrip
         statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel });
@@ -78,6 +94,7 @@ partial class MainForm
     private SplitContainer splitContainer;
     private TreeView treeView;
     private FlowLayoutPanel thumbnailPanel;
+    private Label folderInfoLabel;
     private StatusStrip statusStrip;
     private ToolStripStatusLabel statusLabel;
 }

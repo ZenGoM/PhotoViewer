@@ -165,13 +165,21 @@ public partial class MainForm : Form
         statusLabel.Text = $"読み込み中: {folderPath}";
 
         string[] files;
+        int allFileCount;
+        long allFileBytes, imageFileBytes;
         try
         {
-            files = await Task.Run(() =>
-                Directory.GetFiles(folderPath)
+            (files, allFileCount, allFileBytes, imageFileBytes) = await Task.Run(() =>
+            {
+                var all = Directory.GetFiles(folderPath);
+                long totalSz = all.Sum(f => { try { return new FileInfo(f).Length; } catch { return 0L; } });
+                var imgs = all
                     .Where(f => ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
                     .OrderBy(f => f)
-                    .ToArray(), token);
+                    .ToArray();
+                long imgSz = imgs.Sum(f => { try { return new FileInfo(f).Length; } catch { return 0L; } });
+                return (imgs, all.Length, totalSz, imgSz);
+            }, token);
         }
         catch (OperationCanceledException) { throw; }
         catch (UnauthorizedAccessException)
@@ -185,13 +193,17 @@ public partial class MainForm : Form
             return;
         }
 
+        folderInfoLabel.Text =
+            $"フォルダー: {allFileCount:N0} ファイル / {FormatSize(allFileBytes)}" +
+            $"　　画像: {files.Length:N0} ファイル / {FormatSize(imageFileBytes)}";
+
         if (files.Length == 0)
         {
             statusLabel.Text = "画像ファイルがありません";
             return;
         }
 
-        statusLabel.Text = $"{files.Length} 件の画像";
+        statusLabel.Text = $"{files.Length:N0} 件の画像";
 
         _sharedContextMenu = BuildSharedContextMenu();
 
@@ -419,6 +431,14 @@ public partial class MainForm : Form
         if (sender is ThumbnailPanel { Tag: string path }) OpenFile(path);
     }
 
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024L                 => $"{bytes} B",
+        < 1024L * 1024          => $"{bytes / 1024.0:F1} KB",
+        < 1024L * 1024 * 1024   => $"{bytes / (1024.0 * 1024):F1} MB",
+        _                       => $"{bytes / (1024.0 * 1024 * 1024):F2} GB",
+    };
+
     private static (int w, int h) FitSize(int srcW, int srcH, int maxW, int maxH)
     {
         if (srcW <= maxW && srcH <= maxH) return (srcW, srcH);
@@ -429,6 +449,7 @@ public partial class MainForm : Form
     private void ClearThumbnails()
     {
         _selectedPanel = null;
+        folderInfoLabel.Text = string.Empty;
 
         foreach (var p in _thumbnailPanels)
         {
