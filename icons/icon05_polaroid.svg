@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="sky2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="60%" stop-color="#B3E5FC"/>
+      <stop offset="100%" stop-color="#81C784"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="4" dy="6" stdDeviation="6" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="40" fill="#ECEFF1"/>
+  <!-- ポラロイド影 -->
+  <rect x="46" y="30" width="168" height="200" rx="10" fill="#B0BEC5" filter="url(#shadow)"/>
+  <!-- ポラロイドカード -->
+  <rect x="40" y="24" width="168" height="200" rx="10" fill="white"/>
+  <!-- 写真エリア -->
+  <rect x="56" y="36" width="136" height="130" rx="4" fill="url(#sky2)"/>
+  <!-- 山 -->
+  <polygon points="124,58 72,154 176,154" fill="#2E7D32"/>
+  <polygon points="158,76 114,154 202,154" fill="#388E3C"/>
+  <polygon points="124,58 108,90 140,90" fill="white"/>
+  <!-- 太陽 -->
+  <circle cx="170" cy="60" r="16" fill="#FDD835" opacity="0.9"/>
+  <!-- テキストエリア -->
+  <rect x="56" y="175" width="136" height="10" rx="5" fill="#ECEFF1"/>
+  <rect x="72" y="192" width="104" height="8" rx="4" fill="#ECEFF1"/>
+  <!-- 赤い角 -->
+  <polygon points="56,36 72,36 56,52" fill="#EF9A9A" opacity="0.6"/>
+  <polygon points="192,36 176,36 192,52" fill="#EF9A9A" opacity="0.6"/>
+</svg>

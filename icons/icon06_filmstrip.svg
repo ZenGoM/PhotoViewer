@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="film" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#37474F"/>
+      <stop offset="100%" stop-color="#1C2D35"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="40" fill="#263238"/>
+  <!-- フィルムストリップ本体 -->
+  <rect x="16" y="72" width="224" height="112" rx="8" fill="url(#film)"/>
+  <!-- パーフォレーション（上） -->
+  <rect x="24" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="54" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="84" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="114" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="144" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="174" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="204" y="78" width="20" height="14" rx="4" fill="#455A64"/>
+  <!-- パーフォレーション（下） -->
+  <rect x="24" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="54" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="84" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="114" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="144" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="174" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <rect x="204" y="164" width="20" height="14" rx="4" fill="#455A64"/>
+  <!-- フレーム1: 青空 -->
+  <rect x="22" y="98" width="60" height="60" rx="2" fill="#42A5F5"/>
+  <polygon points="52,108 28,150 76,150" fill="#1565C0"/>
+  <circle cx="66" cy="110" r="8" fill="#FFF176"/>
+  <!-- フレーム2: 夕焼け -->
+  <rect x="98" y="98" width="60" height="60" rx="2" fill="#FF7043"/>
+  <polygon points="128,106 104,150 152,150" fill="#BF360C"/>
+  <circle cx="118" cy="110" r="10" fill="#FFEE58"/>
+  <!-- フレーム3: 緑 -->
+  <rect x="174" y="98" width="60" height="60" rx="2" fill="#66BB6A"/>
+  <polygon points="204,104 180,150 228,150" fill="#2E7D32"/>
+  <polygon points="220,116 196,150 244,150" fill="#388E3C"/>
+</svg>

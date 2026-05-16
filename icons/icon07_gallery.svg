@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="gbg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#26C6DA"/>
+      <stop offset="100%" stop-color="#00838F"/>
+    </linearGradient>
+    <linearGradient id="sky3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B3E5FC"/>
+      <stop offset="100%" stop-color="#E8F5E9"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="48" fill="url(#gbg2)"/>
+  <!-- 奥の写真（右） -->
+  <rect x="130" y="44" width="104" height="84" rx="10" fill="white" opacity="0.5" transform="rotate(8 182 86)"/>
+  <rect x="134" y="48" width="96" height="76" rx="6" fill="#80DEEA" opacity="0.7" transform="rotate(8 182 86)"/>
+  <!-- 奥の写真（左） -->
+  <rect x="22" y="44" width="104" height="84" rx="10" fill="white" opacity="0.5" transform="rotate(-8 74 86)"/>
+  <rect x="26" y="48" width="96" height="76" rx="6" fill="#80CBC4" opacity="0.7" transform="rotate(-8 74 86)"/>
+  <!-- メインの写真 -->
+  <rect x="48" y="68" width="160" height="120" rx="12" fill="white"/>
+  <!-- 写真内容 -->
+  <rect x="54" y="74" width="148" height="108" rx="8" fill="url(#sky3)"/>
+  <polygon points="128,90 72,170 184,170" fill="#388E3C"/>
+  <polygon points="162,106 114,170 210,170" fill="#2E7D32"/>
+  <polygon points="128,90 110,124 146,124" fill="white"/>
+  <circle cx="172" cy="92" r="16" fill="#FDD835"/>
+  <!-- 複数写真の下部 -->
+  <rect x="48" y="192" width="48" height="38" rx="10" fill="white" opacity="0.8"/>
+  <rect x="104" y="192" width="48" height="38" rx="10" fill="white" opacity="0.8"/>
+  <rect x="160" y="192" width="48" height="38" rx="10" fill="white" opacity="0.8"/>
+  <rect x="52" y="196" width="40" height="30" rx="6" fill="#4DB6AC"/>
+  <rect x="108" y="196" width="40" height="30" rx="6" fill="#FF8A65"/>
+  <rect x="164" y="196" width="40" height="30" rx="6" fill="#9575CD"/>
+</svg>

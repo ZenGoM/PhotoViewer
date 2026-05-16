@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="ebg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EC407A"/>
+      <stop offset="100%" stop-color="#880E4F"/>
+    </linearGradient>
+    <linearGradient id="iris" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="100%" stop-color="#0277BD"/>
+    </linearGradient>
+    <clipPath id="eyeClip">
+      <ellipse cx="128" cy="128" rx="108" ry="66"/>
+    </clipPath>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="48" fill="url(#ebg)"/>
+  <!-- 目の白目 -->
+  <ellipse cx="128" cy="128" rx="112" ry="70" fill="white"/>
+  <!-- 風景（瞳の中） -->
+  <ellipse cx="128" cy="128" rx="112" ry="70" fill="#B3E5FC" clip-path="url(#eyeClip)"/>
+  <rect x="16" y="158" width="224" height="40" fill="#66BB6A" clip-path="url(#eyeClip)"/>
+  <polygon points="128,90 80,158 176,158" fill="#388E3C" clip-path="url(#eyeClip)"/>
+  <polygon points="170,104 130,158 210,158" fill="#2E7D32" clip-path="url(#eyeClip)"/>
+  <!-- 虹彩 -->
+  <circle cx="128" cy="128" r="52" fill="url(#iris)"/>
+  <!-- 瞳孔 -->
+  <circle cx="128" cy="128" r="28" fill="#1A237E"/>
+  <circle cx="128" cy="128" r="18" fill="#0D1B54"/>
+  <!-- 光反射 -->
+  <circle cx="116" cy="116" r="8" fill="white" opacity="0.7"/>
+  <circle cx="136" cy="138" r="4" fill="white" opacity="0.4"/>
+  <!-- まつげ（上） -->
+  <path d="M 28 94 Q 128 40 228 94" fill="none" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  <!-- まつげ（下） -->
+  <path d="M 28 162 Q 128 216 228 162" fill="none" stroke="white" stroke-width="12" stroke-linecap="round"/>
+</svg>

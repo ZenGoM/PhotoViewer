@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#81D4FA"/>
+      <stop offset="100%" stop-color="#E1F5FE"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8D6E63"/>
+      <stop offset="100%" stop-color="#4E342E"/>
+    </linearGradient>
+  </defs>
+  <!-- フレーム外枠 -->
+  <rect width="256" height="256" rx="20" fill="url(#frame)"/>
+  <!-- マット -->
+  <rect x="18" y="18" width="220" height="220" rx="10" fill="#D7CCC8"/>
+  <!-- 写真エリア -->
+  <rect x="36" y="36" width="184" height="184" rx="4" fill="url(#sky)"/>
+  <!-- 山 -->
+  <polygon points="128,70 68,184 188,184" fill="#388E3C"/>
+  <polygon points="168,90 118,184 218,184" fill="#2E7D32"/>
+  <!-- 雪 -->
+  <polygon points="128,70 112,102 144,102" fill="white"/>
+  <!-- 地面 -->
+  <rect x="36" y="172" width="184" height="48" rx="0" fill="#4CAF50" opacity="0.5"/>
+  <!-- 太陽 -->
+  <circle cx="176" cy="72" r="18" fill="#FFF9C4"/>
+  <circle cx="176" cy="72" r="12" fill="#FDD835"/>
+</svg>

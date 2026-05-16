@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="mbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7E57C2"/>
+      <stop offset="100%" stop-color="#4527A0"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="10%" y1="10%" x2="90%" y2="90%">
+      <stop offset="0%" stop-color="#EDE7F6" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#9575CD" stop-opacity="0.6"/>
+    </linearGradient>
+    <clipPath id="lensClip">
+      <circle cx="106" cy="106" r="72"/>
+    </clipPath>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="48" fill="url(#mbg)"/>
+  <!-- 写真（ルーペの下） -->
+  <rect x="34" y="34" width="160" height="120" rx="10" fill="white" opacity="0.2"/>
+  <rect x="34" y="154" width="160" height="68" rx="0" fill="white" opacity="0.1"/>
+  <!-- ルーペ円 -->
+  <circle cx="106" cy="106" r="76" fill="white" opacity="0.15"/>
+  <!-- ルーペ内の写真 -->
+  <rect x="34" y="34" width="160" height="120" rx="10" fill="#B39DDB" clip-path="url(#lensClip)"/>
+  <polygon points="106,52 58,130 154,130" fill="#7E57C2" clip-path="url(#lensClip)"/>
+  <polygon points="140,68 100,130 180,130" fill="#673AB7" clip-path="url(#lensClip)"/>
+  <circle cx="148" cy="62" r="14" fill="#FFF9C4" clip-path="url(#lensClip)"/>
+  <!-- ガラス反射 -->
+  <circle cx="106" cy="106" r="72" fill="url(#glass)"/>
+  <!-- ルーペ枠 -->
+  <circle cx="106" cy="106" r="76" fill="none" stroke="white" stroke-width="10"/>
+  <!-- ハイライト -->
+  <ellipse cx="82" cy="78" rx="18" ry="10" fill="white" opacity="0.4" transform="rotate(-30 82 78)"/>
+  <!-- 持ち手 -->
+  <line x1="165" y1="165" x2="222" y2="222" stroke="white" stroke-width="18" stroke-linecap="round"/>
+</svg>

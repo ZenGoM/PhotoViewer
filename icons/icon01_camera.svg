@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2196F3"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#90CAF9"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <!-- カメラボディ -->
+  <rect x="36" y="88" width="184" height="120" rx="18" fill="white" opacity="0.95"/>
+  <!-- ファインダー -->
+  <rect x="96" y="64" width="64" height="34" rx="10" fill="white" opacity="0.95"/>
+  <rect x="108" y="72" width="40" height="18" rx="6" fill="#1976D2"/>
+  <!-- フラッシュ -->
+  <rect x="48" y="72" width="28" height="16" rx="6" fill="white" opacity="0.7"/>
+  <!-- レンズリング外 -->
+  <circle cx="128" cy="152" r="46" fill="url(#lens)"/>
+  <!-- レンズ内 -->
+  <circle cx="128" cy="152" r="36" fill="#1A237E"/>
+  <circle cx="128" cy="152" r="24" fill="#0D47A1"/>
+  <circle cx="128" cy="152" r="14" fill="#42A5F5"/>
+  <!-- ハイライト -->
+  <circle cx="120" cy="144" r="5" fill="white" opacity="0.6"/>
+  <!-- シャッターボタン -->
+  <circle cx="196" cy="112" r="10" fill="#42A5F5"/>
+</svg>

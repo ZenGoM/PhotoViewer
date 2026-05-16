@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="mbg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#42A5F5"/>
+      <stop offset="40%" stop-color="#7E57C2"/>
+      <stop offset="100%" stop-color="#EC407A"/>
+    </linearGradient>
+    <linearGradient id="imgIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="56" fill="url(#mbg2)"/>
+  <!-- 外枠（写真アイコン） -->
+  <rect x="40" y="56" width="176" height="144" rx="18" fill="url(#imgIcon)"/>
+  <!-- 写真内のイメージ -->
+  <rect x="40" y="56" width="176" height="144" rx="18" fill="none" stroke="white" stroke-width="0"/>
+  <!-- 山のシルエット -->
+  <polygon points="128,86 72,174 184,174" fill="#7E57C2" opacity="0.5"/>
+  <polygon points="168,102 118,174 218,174" fill="#5C35A0" opacity="0.5"/>
+  <!-- 雪 -->
+  <polygon points="128,86 113,116 143,116" fill="white" opacity="0.8"/>
+  <!-- 地面 -->
+  <rect x="40" y="162" width="176" height="38" rx="0" fill="#66BB6A" opacity="0.4"/>
+  <!-- 太陽 -->
+  <circle cx="176" cy="88" r="18" fill="#FFF9C4" opacity="0.9"/>
+  <circle cx="176" cy="88" r="12" fill="#FDD835" opacity="0.9"/>
+  <!-- 角の折り返し -->
+  <polygon points="198,56 216,56 216,74" fill="white" opacity="0.3"/>
+  <!-- 下のドット（ページ） -->
+  <circle cx="96" cy="216" r="10" fill="white" opacity="0.5"/>
+  <circle cx="128" cy="216" r="10" fill="white" opacity="0.9"/>
+  <circle cx="160" cy="216" r="10" fill="white" opacity="0.5"/>
+</svg>
