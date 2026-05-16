@@ -1,3 +1,5 @@
+using System.Drawing.Imaging;
+
 namespace PhotoViewer;
 
 public partial class MainForm : Form
@@ -10,6 +12,7 @@ public partial class MainForm : Form
     private ThumbnailPanel? _selectedPanel;
     private CancellationTokenSource? _loadCts;
     private readonly AppSettings _settings;
+    private ContextMenuStrip? _sharedContextMenu;
 
     public MainForm()
     {
@@ -190,6 +193,8 @@ public partial class MainForm : Form
 
         statusLabel.Text = $"{files.Length} 件の画像";
 
+        _sharedContextMenu = BuildSharedContextMenu();
+
         // パネルをバッチ作成しながら yield して UI を解放する
         const int BatchSize = 50;
         for (int i = 0; i < files.Length; i += BatchSize)
@@ -265,11 +270,137 @@ public partial class MainForm : Form
         return img.GetThumbnailImage(w, h, null, IntPtr.Zero);
     }
 
+    private ContextMenuStrip BuildSharedContextMenu()
+    {
+        var menu = new ContextMenuStrip();
+
+        menu.Items.Add("開く", null, (_, _) =>
+        {
+            if (GetContextFilePath(menu) is string path) OpenFile(path);
+        });
+
+        var rotateMenu = new ToolStripMenuItem("回転");
+        rotateMenu.DropDownItems.Add("右に90°回転", null, (_, _) =>
+        {
+            if (GetContextFilePath(menu) is string path)
+                _ = RotateAndReloadAsync(path, RotateFlipType.Rotate90FlipNone);
+        });
+        rotateMenu.DropDownItems.Add("左に90°回転", null, (_, _) =>
+        {
+            if (GetContextFilePath(menu) is string path)
+                _ = RotateAndReloadAsync(path, RotateFlipType.Rotate270FlipNone);
+        });
+        menu.Items.Add(rotateMenu);
+
+        menu.Items.Add(new ToolStripSeparator());
+
+        menu.Items.Add("フォルダーを開く", null, (_, _) =>
+        {
+            if (GetContextFilePath(menu) is string path)
+                try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\""); } catch { }
+        });
+
+        menu.Items.Add("パスをコピー", null, (_, _) =>
+        {
+            if (GetContextFilePath(menu) is string path) Clipboard.SetText(path);
+        });
+
+        return menu;
+    }
+
+    private static string? GetContextFilePath(ContextMenuStrip menu)
+    {
+        var src = menu.SourceControl;
+        var panel = src as ThumbnailPanel ?? src?.Parent as ThumbnailPanel;
+        return panel?.Tag as string;
+    }
+
+    private static void OpenFile(string path)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true }); }
+        catch { }
+    }
+
+    private async Task RotateAndReloadAsync(string filePath, RotateFlipType rotation)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        if (ext == ".webp")
+        {
+            statusLabel.Text = "WebP 形式は回転に対応していません";
+            return;
+        }
+
+        statusLabel.Text = "回転中...";
+        try
+        {
+            await Task.Run(() => ApplyRotation(filePath, rotation, ext));
+
+            var panel = _thumbnailPanels.FirstOrDefault(p =>
+                string.Equals(p.Tag as string, filePath, StringComparison.OrdinalIgnoreCase));
+            if (panel != null && !panel.IsDisposed)
+            {
+                Image? thumb = null;
+                try { thumb = await Task.Run(() => LoadThumbnail(filePath)); }
+                catch { return; }
+                if (!panel.IsDisposed) panel.SetThumbnail(thumb);
+                else thumb?.Dispose();
+            }
+            statusLabel.Text = Path.GetFileName(filePath);
+        }
+        catch (Exception ex)
+        {
+            statusLabel.Text = $"回転エラー: {ex.Message}";
+        }
+    }
+
+    private static void ApplyRotation(string filePath, RotateFlipType rotation, string ext)
+    {
+        Bitmap bmp;
+        using (var fs = File.OpenRead(filePath))
+            bmp = new Bitmap(fs);
+
+        using (bmp)
+        {
+            bmp.RotateFlip(rotation);
+
+            // EXIF の向きタグを「正立」にリセット（保存後に二重回転しないよう）
+            const int ExifOrientationId = 0x0112;
+            if (bmp.PropertyIdList.Contains(ExifOrientationId))
+            {
+                var prop = bmp.GetPropertyItem(ExifOrientationId)!;
+                prop.Value = BitConverter.GetBytes((short)1);
+                bmp.SetPropertyItem(prop);
+            }
+
+            if (ext is ".jpg" or ".jpeg")
+            {
+                var codec = ImageCodecInfo.GetImageEncoders()
+                    .First(c => c.FormatID == ImageFormat.Jpeg.Guid);
+                using var ep = new EncoderParameters(1);
+                ep.Param[0] = new EncoderParameter(Encoder.Quality, 95L);
+                bmp.Save(filePath, codec, ep);
+            }
+            else
+            {
+                var format = ext switch
+                {
+                    ".png"          => ImageFormat.Png,
+                    ".bmp"          => ImageFormat.Bmp,
+                    ".gif"          => ImageFormat.Gif,
+                    ".tiff" or ".tif" => ImageFormat.Tiff,
+                    _               => ImageFormat.Png,
+                };
+                bmp.Save(filePath, format);
+            }
+        }
+    }
+
     private ThumbnailPanel CreateThumbnailPanel(string filePath)
     {
         var panel = new ThumbnailPanel(filePath, ThumbnailSize, ThumbnailPadding);
         panel.Click += ThumbnailPanel_Click;
         panel.DoubleClick += ThumbnailPanel_DoubleClick;
+        panel.ApplyContextMenu(_sharedContextMenu!);
         return panel;
     }
 
@@ -285,11 +416,7 @@ public partial class MainForm : Form
 
     private void ThumbnailPanel_DoubleClick(object? sender, EventArgs e)
     {
-        if (sender is ThumbnailPanel { Tag: string path })
-        {
-            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true }); }
-            catch { }
-        }
+        if (sender is ThumbnailPanel { Tag: string path }) OpenFile(path);
     }
 
     private static (int w, int h) FitSize(int srcW, int srcH, int maxW, int maxH)
@@ -307,8 +434,12 @@ public partial class MainForm : Form
         {
             p.Click -= ThumbnailPanel_Click;
             p.DoubleClick -= ThumbnailPanel_DoubleClick;
+            p.ContextMenuStrip = null;
         }
         _thumbnailPanels.Clear();
+
+        _sharedContextMenu?.Dispose();
+        _sharedContextMenu = null;
 
         // 旧コンテナを新しい空のコンテナに差し替える。
         // Controls.Clear() は子パネル1枚ごとに SetParent(NULL) を呼ぶため
@@ -419,6 +550,13 @@ internal class ThumbnailPanel : Panel
         MouseLeave += (s, e) => { if (!_selected) BackColor = NormalColor; };
         _pictureBox.MouseEnter += (s, e) => { if (!_selected) BackColor = HoverColor; };
         _pictureBox.MouseLeave += (s, e) => { if (!_selected) BackColor = NormalColor; };
+    }
+
+    public void ApplyContextMenu(ContextMenuStrip menu)
+    {
+        ContextMenuStrip = menu;
+        _pictureBox.ContextMenuStrip = menu;
+        _label.ContextMenuStrip = menu;
     }
 
     public void SetThumbnail(Image thumbnail)
