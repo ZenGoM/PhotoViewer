@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="icons\icon07_gallery.ico" />
+    <EmbeddedResource Include="icons\icon07_gallery.ico" />
   </ItemGroup>
 
 </Project>

@@ -71,6 +71,8 @@ partial class MainForm
         Font = new Font("Segoe UI", 9f);
         MinimumSize = new Size(700, 500);
         Text = "フォト ビューアー";
+        using (var stream = GetType().Assembly.GetManifestResourceStream("PhotoViewer.icons.icon07_gallery.ico"))
+            if (stream != null) Icon = new Icon(stream);
 
         ((System.ComponentModel.ISupportInitialize)splitContainer).EndInit();
         splitContainer.Panel1.ResumeLayout(false);
